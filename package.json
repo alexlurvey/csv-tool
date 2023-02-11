@@ -1,0 +1,19 @@
+{
+  "name": "csv_tool",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Alex Lurvey <alexlurvey@protonmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@thi.ng/csv": "^2.3.2",
+    "@thi.ng/rdom": "^0.10.9",
+    "@thi.ng/rstream": "^7.2.38"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1"
+  }
+}
