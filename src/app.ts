@@ -1,8 +1,6 @@
 import { div, h1, inputFile, span } from '@thi.ng/hiccup-html';
 import { $compile, $list } from '@thi.ng/rdom';
 import {
-    fromIterable,
-    ISubscription,
     metaStream,
     reactive,
     stream,
@@ -10,10 +8,12 @@ import {
 } from '@thi.ng/rstream';
 import {
     groupByObj,
+    last,
     multiplexObj,
     range,
     reducer,
     scan,
+    transduce,
 } from '@thi.ng/transducers';
 import { cell_flex, NoData, Percent, PriceGroup } from './components';
 import { parseCSV, RowData } from './csv';
@@ -61,7 +61,8 @@ const table_metadata = table_rows.map((rows) => {
 const table_max_count = table_metadata.map((x) => x.count);
 const table_max_price = table_metadata.map((x) => x.price);
 const table_data = metaStream<{ rows: RowData[], max: number }, TableData>(({ rows, max }) => {
-    return fromIterable(rows).transform(table_data_xform(max)) as unknown as ISubscription<TableData, TableData>;
+    const res = transduce(table_data_xform(max), last(), rows);
+    return reactive(res);
 });
 
 sync({ src: { table_rows, max_count }})
