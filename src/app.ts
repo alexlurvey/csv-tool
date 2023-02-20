@@ -136,7 +136,7 @@ const onFileUpload = (ev) => {
 }
 
 $compile(div({},
-    h1({ class: 'text-3xl' }, 'CSS Tool'),
+    h1({ class: 'text-3xl' }, 'CSV Tool'),
     div({},
         inputFile({ class: 'my-4', onchange: onFileUpload }),
         $list(
