@@ -143,10 +143,14 @@ $compile(div({},
             categories.map((x) => [...x]),
             'div',
             { class: 'flex gap-x-2 mb-4' },
-            (x) => CategoryToggle(x, () => category.next(x))
+            (x) => CategoryToggle(x, category, () => category.next(x))
         ),
-        div({ class: 'mb-2' },  span({}, 'Max Pack Size: '), span({}, $replace(table_max_count))),
-        div({ class: 'mb-4' }, span({}, 'Max Price: '), span({}, $replace(table_max_price.map((x) => `$${x}`)))),
+        div({ class: 'grid grid-cols-[repeat(2,minmax(0,max-content))] gap-2' },
+            div({},  span({}, 'Max Pack Size: ')),
+            div({}, span({}, $replace(table_max_count))),
+            div({ class: 'mb-4' }, span({}, 'Max Price: ')),
+            div({}, $replace(table_max_price.map((x) => `$${x}`)))
+        ),
         $list(
             column_headers,
             'div',

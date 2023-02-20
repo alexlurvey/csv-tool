@@ -1,3 +1,4 @@
+import { Stream } from '@thi.ng/rstream';
 import { clamp } from "./utils";
 
 export const cell_flex = 'flex justify-center items-center';
@@ -35,9 +36,10 @@ const PriceGroup = (bucket: string, { isLastRow = false } = {}) => {
 }
 
 
-export const CategoryToggle = (cat: string, onclick: () => void) => {
-    const classes = 'border border-solid border-black cursor-pointer p-2';
-    return ['div', { class: classes, onclick }, cat];
+export const CategoryToggle = (cat: string, current: Stream<string>, onclick: () => void) => {
+    const bg = { 'background-color': current.map((x) => cat === x ? 'rgba(0,103,103,0.5)' : 'white' ) };
+    const classes = `border border-solid border-black cursor-pointer p-2`;
+    return ['div', { class: classes, onclick, style: bg }, cat];
 }
 
 
