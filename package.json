@@ -5,8 +5,8 @@
   "author": "Alex Lurvey <alexlurvey@protonmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "yarn tailwind && vite",
-    "tailwind": "tailwindcss -o dist/main.css"
+    "build": "tailwindcss -o dist/main.css && vite build",
+    "dev": "tailwindcss -o main.css && vite"
   },
   "dependencies": {
     "@thi.ng/csv": "^2.3.2",

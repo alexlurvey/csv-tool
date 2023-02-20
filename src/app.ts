@@ -1,5 +1,5 @@
 import { div, h1, inputFile, span } from '@thi.ng/hiccup-html';
-import { $compile, $list } from '@thi.ng/rdom';
+import { $compile, $list, $replace } from '@thi.ng/rdom';
 import {
     metaStream,
     reactive,
@@ -15,7 +15,7 @@ import {
     scan,
     transduce,
 } from '@thi.ng/transducers';
-import { cell_flex, NoData, Percent, PriceGroup } from './components';
+import { cell_flex, CategoryToggle, TableCell } from './components';
 import { parseCSV, RowData } from './csv';
 import { isValidRow } from './utils';
 
@@ -135,41 +135,23 @@ const onFileUpload = (ev) => {
     reader.readAsText(file)
 }
 
-const TableCell = (maxcount: number) => {
-    let current_bucket = '';
-
-    return ([idx, p]) => {
-        if (typeof p === 'string') {
-            current_bucket = p;
-            return PriceGroup(p, { isLastRow: p === String(MAX_PRICE_CAT) });
-        }
-
-        const opts = {
-            isLastRow: current_bucket === String(MAX_PRICE_CAT),
-            isLastCol: (parseInt(idx) + 1) % (maxcount + 1) === 0
-        }
-
-        return p === 0 ? NoData(opts) : Percent(p, opts)
-    }
-}
-
-const CategoryToggle = (cat: string) => {
-    const classes = 'border border-solid border-black cursor-pointer';
-    return ['div', { class: classes, onclick: () => category.next(cat) }, cat];
-}
-
 $compile(div({},
     h1({}, 'CSS Tool'),
     div({},
         inputFile({ class: 'my-4', onchange: onFileUpload }),
-        $list(categories.map((x) => [...x]), 'div', { class: 'flex gap-x-2' }, CategoryToggle),
-        div({},  span({}, 'Max Pack Size:'), span({}, table_max_count)),
-        div({}, span({}, 'Max Price:'), span({}, table_max_price)),
+        $list(
+            categories.map((x) => [...x]),
+            'div',
+            { class: 'flex gap-x-2 m-1' },
+            (x) => CategoryToggle(x, () => category.next(x))
+        ),
+        div({ class: 'm-1' },  span({}, 'Max Pack Size: '), span({}, $replace(table_max_count))),
+        div({ class: 'm-1' }, span({}, 'Max Price: '), span({}, $replace(table_max_price.map((x) => `$${x}`)))),
         $list(
             column_headers,
             'div',
             {
-                class: 'grid grid-rows-auto',
+                class: 'grid grid-rows-auto m-1',
                 style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
             },
             (num: number) => num === 0
@@ -194,7 +176,7 @@ $compile(div({},
                 class: 'grid grid-rows-auto border-solid border-black border-2',
                 style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
             },
-            TableCell(max_count.deref()!)
+            TableCell(max_count.deref()!, MAX_PRICE_CAT)
         )
     )
 )).mount(document.body)

@@ -12,12 +12,12 @@ const price_labels = {
     50: '> €49.99',
 }
 
-export const NoData = ({ isLastRow = false, isLastCol = false } = {}) => {
+const NoData = ({ isLastRow = false, isLastCol = false } = {}) => {
     const classes = `${cell_style} ${cell_border(isLastRow, isLastCol)}`.trim();
     return ['div', { class: classes }, 'No Sales']
 }
 
-export const Percent = (percent: number, { isLastRow = false, isLastCol = false } = {}) => {
+const Percent = (percent: number, { isLastRow = false, isLastCol = false } = {}) => {
     const classes = `${cell_style} ${cell_border(isLastRow, isLastCol)}`.trim();
     const value = isNaN(percent) ? 0 : percent < 1 ? percent.toFixed(2) : percent < 10 ? percent.toFixed(1) : percent.toFixed(0);
     const background = `rgba(0, 100, 0, ${(clamp(percent, 10, 90) / 100).toFixed(2)})`;
@@ -29,7 +29,32 @@ export const Percent = (percent: number, { isLastRow = false, isLastCol = false 
     ]
 }
 
-export const PriceGroup = (bucket: string, { isLastRow = false } = {}) => {
+const PriceGroup = (bucket: string, { isLastRow = false } = {}) => {
     const classes = `${cell_style} ${cell_border(isLastRow)}`.trim();
     return  ['div', { class: classes }, price_labels[bucket]];
+}
+
+
+export const CategoryToggle = (cat: string, onclick: () => void) => {
+    const classes = 'border border-solid border-black cursor-pointer p-2';
+    return ['div', { class: classes, onclick }, cat];
+}
+
+
+export const TableCell = (maxcount: number, maxprice: number) => {
+    let current_bucket = '';
+
+    return ([idx, p]) => {
+        if (typeof p === 'string') {
+            current_bucket = p;
+            return PriceGroup(p, { isLastRow: p === String(maxprice) });
+        }
+
+        const opts = {
+            isLastRow: current_bucket === String(maxprice),
+            isLastCol: (parseInt(idx) + 1) % (maxcount + 1) === 0
+        }
+
+        return p === 0 ? NoData(opts) : Percent(p, opts)
+    }
 }
