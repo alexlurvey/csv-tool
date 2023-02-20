@@ -245,6 +245,13 @@
   resolved "https://registry.yarnpkg.com/@thi.ng/hex/-/hex-2.3.6.tgz#6fbd151a47f61bd9dbc136af8626187d3bc11a3e"
   integrity sha512-X0QGUmYo2xZSt7NTLvojNApW0PB+sBgbof38f4ZFVvpdzH1FoYum1JKkPYyiUi14VBJgvjUPMJQQ2RXyRXcEWg==
 
+"@thi.ng/hiccup-html@^2.2.8":
+  version "2.2.8"
+  resolved "https://registry.yarnpkg.com/@thi.ng/hiccup-html/-/hiccup-html-2.2.8.tgz#87996e2efbe56e95d5949edbdfc2305d34340a88"
+  integrity sha512-oo5WcJJNpOmI9wg8H6Vsh1aGKeClHR/wtdF7LAOYhMCX7Op8Ux69ktIHM44pl7sc3NJyKsr887N/eGmuDphF4A==
+  dependencies:
+    "@thi.ng/api" "^8.7.2"
+
 "@thi.ng/hiccup@^4.2.32":
   version "4.2.32"
   resolved "https://registry.yarnpkg.com/@thi.ng/hiccup/-/hiccup-4.2.32.tgz#81cc4ba4bc4f5157f0f15936c1130033a3b3de53"

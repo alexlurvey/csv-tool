@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@thi.ng/csv": "^2.3.2",
+    "@thi.ng/hiccup-html": "^2.2.8",
     "@thi.ng/rdom": "^0.10.9",
     "@thi.ng/rstream": "^7.2.38",
     "tailwindcss": "^3.2.6"

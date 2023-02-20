@@ -1,3 +1,4 @@
+import { div, h1, inputFile, span } from '@thi.ng/hiccup-html';
 import { $compile, $list } from '@thi.ng/rdom';
 import {
     fromIterable,
@@ -5,7 +6,7 @@ import {
     metaStream,
     reactive,
     stream,
-    sync
+    sync,
 } from '@thi.ng/rstream';
 import {
     groupByObj,
@@ -46,19 +47,29 @@ const max_count = reactive(8);
 const title = reactive('');
 const all_rows = reactive<RowData[]>([]);
 const categories = all_rows.map((rs) => new Set(rs.map((x) => x.category)));
-const table_rows = metaStream<{ rows: RowData[], max: number }, TableData>(({ rows, max }) => {
+const table_rows = sync({ src: { all_rows, category }}).map(({ all_rows, category }) => {
+    return all_rows.filter((row) => row.category === category && isValidRow(row));
+})
+const table_metadata = table_rows.map((rows) => {
+    return rows.reduce((acc, row) => {
+        return {
+            count: Math.max(acc.count, row.count),
+            price: Math.max(acc.price, row.price)
+        }
+    }, { count: -Infinity, price: -Infinity })
+})
+const table_max_count = table_metadata.map((x) => x.count);
+const table_max_price = table_metadata.map((x) => x.price);
+const table_data = metaStream<{ rows: RowData[], max: number }, TableData>(({ rows, max }) => {
     return fromIterable(rows).transform(table_data_xform(max)) as unknown as ISubscription<TableData, TableData>;
 });
 
-sync({ src: { category, all_rows, max_count }})
-    .subscribe({ next: ({ all_rows, category, max_count }) => {
-        const next = all_rows.filter((row) => {
-            return row.category === category && isValidRow(row)
-        });
-        table_rows.next({ rows: next, max: max_count });
+sync({ src: { table_rows, max_count }})
+    .subscribe({ next: ({ table_rows, max_count }) => {
+        table_data.next({ rows: table_rows, max: max_count });
     }})
 
-const cells = sync({ src: { table_rows, max_count }}).map<Record<string, number[]>>(({ table_rows: { totals, columns }, max_count }) => {
+const cells = sync({ src: { table_data, max_count }}).map<Record<string, number[]>>(({ table_data: { totals, columns }, max_count }) => {
     const table: Record<number, RowData[][]> = Object.entries(columns).reduce((acc, [col, row]) => {
         const idx = parseInt(col) - 1;
         for (const [bucket, d] of Object.entries(row)) {
@@ -77,7 +88,7 @@ const cells = sync({ src: { table_rows, max_count }}).map<Record<string, number[
     return percents;
 })
 
-const column_headers = table_rows.map(({ columns }) => {
+const column_headers = table_data.map(({ columns }) => {
     let prev = 0;
     return [0, ...Object.keys(columns).flatMap((x) => {
         const num = parseInt(x);
@@ -89,7 +100,7 @@ const column_headers = table_rows.map(({ columns }) => {
     })]
 })
 
-const sales_dist_ui = table_rows.map(({ totals }) => {
+const sales_dist_ui = table_data.map(({ totals }) => {
     const all_sales = Object.values(totals).reduce((acc, x) => acc + x, 0);
     let prev = 0;
     const percents = Object.entries(totals).flatMap(([count, num]) => {
@@ -146,11 +157,13 @@ const CategoryToggle = (cat: string) => {
     return ['div', { class: classes, onclick: () => category.next(cat) }, cat];
 }
 
-$compile(['div', {},
-    ['h1', {}, 'CSS Tool' ],
-    ['div', {},
-        ['input', { class: 'my-4', type: 'file', onchange: onFileUpload }],
+$compile(div({},
+    h1({}, 'CSS Tool'),
+    div({},
+        inputFile({ class: 'my-4', onchange: onFileUpload }),
         $list(categories.map((x) => [...x]), 'div', { class: 'flex gap-x-2' }, CategoryToggle),
+        div({},  span({}, 'Max Pack Size:'), span({}, table_max_count)),
+        div({}, span({}, 'Max Price:'), span({}, table_max_price)),
         $list(
             column_headers,
             'div',
@@ -182,5 +195,5 @@ $compile(['div', {},
             },
             TableCell(max_count.deref()!)
         )
-    ]
-]).mount(document.body)
+    )
+)).mount(document.body)
