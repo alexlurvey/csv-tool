@@ -1,8 +1,13 @@
 import { $compile, $list } from '@thi.ng/rdom';
-import { fromIterable, metaStream, reactive } from '@thi.ng/rstream';
 import {
-    comp,
-    filter,
+    fromIterable,
+    ISubscription,
+    metaStream,
+    reactive,
+    stream,
+    sync
+} from '@thi.ng/rstream';
+import {
     groupByObj,
     multiplexObj,
     range,
@@ -11,6 +16,7 @@ import {
 } from '@thi.ng/transducers';
 import { cell_flex, NoData, Percent, PriceGroup } from './components';
 import { parseCSV, RowData } from './csv';
+import { isValidRow } from './utils';
 
 type TableData = {
     totals: Record<number, number>;
@@ -20,38 +26,43 @@ type TableData = {
 
 const MAX_PRICE_CAT = 50;
 const PRICE_CAT_RANGE = 10;
-const MAX_COUNT = 8;
 
-const row_xform = (cat: string) => comp(
-    filter((x: RowData) => x.category === cat),
-    filter((x: RowData) => !isNaN(x.unit_sales)),
-)
-
-// const category = reactive('AREA CONTINUOUS');
-const title = reactive('')
-const rows = reactive<RowData[]>([])
-const table_rows = metaStream((cat: string) => fromIterable(rows.deref()!).transform(row_xform(cat)));
-// const categories = rows.map((rs) => new Set(rs.map((x) => x.category)))
-
-const data = table_rows.transform(multiplexObj<RowData, TableData>({
+const table_data_xform = (max: number) => multiplexObj<RowData, TableData>({
     totals: scan(groupByObj<RowData, number>({
-        key: (x) => Math.min(x.count, MAX_COUNT),
+        key: (x) => Math.min(x.count, max),
         group: reducer(() => 0, (acc, x) => acc + x.unit_sales)
     })),
     rows: scan(groupByObj<RowData, RowData[]>({
         key: (x) => Math.min(Math.ceil(x.price / PRICE_CAT_RANGE) * PRICE_CAT_RANGE, MAX_PRICE_CAT)
     })),
     columns: scan(groupByObj<RowData, Record<number, RowData>>({
-        key: (x) => Math.min(x.count, MAX_COUNT),
+        key: (x) => Math.min(x.count, max),
         group: groupByObj({ key: (x) => Math.min(Math.ceil(x.price / PRICE_CAT_RANGE) * PRICE_CAT_RANGE, MAX_PRICE_CAT) })
     }))
-}))
+})
 
-const cells = data.map<Record<string, number[]>>(({ totals, columns }) => {
+const category = stream<string>();
+const max_count = reactive(8);
+const title = reactive('');
+const all_rows = reactive<RowData[]>([]);
+const categories = all_rows.map((rs) => new Set(rs.map((x) => x.category)));
+const table_rows = metaStream<{ rows: RowData[], max: number }, TableData>(({ rows, max }) => {
+    return fromIterable(rows).transform(table_data_xform(max)) as unknown as ISubscription<TableData, TableData>;
+});
+
+sync({ src: { category, all_rows, max_count }})
+    .subscribe({ next: ({ all_rows, category, max_count }) => {
+        const next = all_rows.filter((row) => {
+            return row.category === category && isValidRow(row)
+        });
+        table_rows.next({ rows: next, max: max_count });
+    }})
+
+const cells = sync({ src: { table_rows, max_count }}).map<Record<string, number[]>>(({ table_rows: { totals, columns }, max_count }) => {
     const table: Record<number, RowData[][]> = Object.entries(columns).reduce((acc, [col, row]) => {
         const idx = parseInt(col) - 1;
         for (const [bucket, d] of Object.entries(row)) {
-            acc[bucket] = acc[bucket] || Array(MAX_COUNT).fill([]);
+            acc[bucket] = acc[bucket] || Array(max_count).fill([]);
             acc[bucket][idx] = d;
         }
         return acc;
@@ -66,7 +77,7 @@ const cells = data.map<Record<string, number[]>>(({ totals, columns }) => {
     return percents;
 })
 
-const column_headers = data.map(({ columns }) => {
+const column_headers = table_rows.map(({ columns }) => {
     let prev = 0;
     return [0, ...Object.keys(columns).flatMap((x) => {
         const num = parseInt(x);
@@ -78,7 +89,7 @@ const column_headers = data.map(({ columns }) => {
     })]
 })
 
-const sales_dist_ui = data.map(({ totals }) => {
+const sales_dist_ui = table_rows.map(({ totals }) => {
     const all_sales = Object.values(totals).reduce((acc, x) => acc + x, 0);
     let prev = 0;
     const percents = Object.entries(totals).flatMap(([count, num]) => {
@@ -106,14 +117,13 @@ const onFileUpload = (ev) => {
         if (typeof text === 'string') {
             const [t, ...rest] = text.split('\r\n');
             title.next(t);
-            rows.next([...parseCSV(rest)]);
-            table_rows.next('AREA CONTINUOUS')
+            all_rows.next([...parseCSV(rest)]);
         }
     }
     reader.readAsText(file)
 }
 
-const TableCell = () => {
+const TableCell = (maxcount: number) => {
     let current_bucket = '';
 
     return ([idx, p]) => {
@@ -124,34 +134,40 @@ const TableCell = () => {
 
         const opts = {
             isLastRow: current_bucket === String(MAX_PRICE_CAT),
-            isLastCol: (parseInt(idx) + 1) % (MAX_COUNT + 1) === 0
+            isLastCol: (parseInt(idx) + 1) % (maxcount + 1) === 0
         }
 
         return p === 0 ? NoData(opts) : Percent(p, opts)
     }
 }
 
+const CategoryToggle = (cat: string) => {
+    const classes = 'border border-solid border-black cursor-pointer';
+    return ['div', { class: classes, onclick: () => category.next(cat) }, cat];
+}
+
 $compile(['div', {},
     ['h1', {}, 'CSS Tool' ],
     ['div', {},
         ['input', { class: 'my-4', type: 'file', onchange: onFileUpload }],
+        $list(categories.map((x) => [...x]), 'div', { class: 'flex gap-x-2' }, CategoryToggle),
         $list(
             column_headers,
             'div',
             {
                 class: 'grid grid-rows-auto',
-                style: { 'grid-template-columns': `2fr repeat(${MAX_COUNT}, minmax(0, 1fr))` }
+                style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
             },
             (num: number) => num === 0
                 ? ['div', { class: `${cell_flex} min-h-[3rem]` }, 'Pack Size']
-                : ['div', { class: `${cell_flex} min-h-[3rem]` }, num === MAX_COUNT ? `${num}+` : num]
+                : ['div', { class: `${cell_flex} min-h-[3rem]` }, num === max_count.deref() ? `${num}+` : num]
         ),
         $list(
             sales_dist_ui,
             'div',
             {
                 class: 'grid grid-rows-auto',
-                style: { 'grid-template-columns': `2fr repeat(${MAX_COUNT}, minmax(0, 1fr))` }
+                style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
             },
             (x: number) => x === -1
                 ? ['div',  { class: `${cell_flex} min-h-[3rem]` }, 'Sales Distribution']
@@ -162,9 +178,9 @@ $compile(['div', {},
             'div',
             {
                 class: 'grid grid-rows-auto border-solid border-black border-2',
-                style: { 'grid-template-columns': `2fr repeat(${MAX_COUNT}, minmax(0, 1fr))` }
+                style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
             },
-            TableCell()
+            TableCell(max_count.deref()!)
         )
     ]
 ]).mount(document.body)
