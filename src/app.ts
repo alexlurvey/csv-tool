@@ -136,17 +136,17 @@ const onFileUpload = (ev) => {
 }
 
 $compile(div({},
-    h1({}, 'CSS Tool'),
+    h1({ class: 'text-3xl' }, 'CSS Tool'),
     div({},
         inputFile({ class: 'my-4', onchange: onFileUpload }),
         $list(
             categories.map((x) => [...x]),
             'div',
-            { class: 'flex gap-x-2 m-1' },
+            { class: 'flex gap-x-2 mb-4' },
             (x) => CategoryToggle(x, () => category.next(x))
         ),
-        div({ class: 'm-1' },  span({}, 'Max Pack Size: '), span({}, $replace(table_max_count))),
-        div({ class: 'm-1' }, span({}, 'Max Price: '), span({}, $replace(table_max_price.map((x) => `$${x}`)))),
+        div({ class: 'mb-2' },  span({}, 'Max Pack Size: '), span({}, $replace(table_max_count))),
+        div({ class: 'mb-4' }, span({}, 'Max Price: '), span({}, $replace(table_max_price.map((x) => `$${x}`)))),
         $list(
             column_headers,
             'div',
