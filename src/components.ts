@@ -2,7 +2,7 @@ import { Stream } from '@thi.ng/rstream';
 import { clamp } from "./utils";
 
 export const cell_flex = 'flex justify-center items-center';
-const cell_border = (lastRow = false, lastCol = false) => `${lastRow ? '' : 'border-b-2'} ${lastCol ? '' : 'border-r-2'}`;
+const cell_border = (lastRow = false, lastCol = false) => `border-slate-300 ${lastRow ? '' : 'border-b'} ${lastCol ? '' : 'border-r'}`;
 const cell_style = `${cell_flex} min-w-min border-solid p-1 min-h-[4rem]`;
 
 const price_labels = {

@@ -148,36 +148,38 @@ $compile(div({},
             div({ class: 'mb-4' }, span({}, 'Max Price: ')),
             div({}, $replace(table_max_price.map((x) => `€${x}`)))
         ),
-        $list(
-            column_headers,
-            'div',
-            {
-                class: 'grid grid-rows-auto m-1',
-                style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
-            },
-            (num: number) => num === 0
-                ? ['div', { class: `${cell_flex} min-h-[3rem]` }, 'Pack Size']
-                : ['div', { class: `${cell_flex} min-h-[3rem]` }, num === max_count.deref() ? `${num}+` : num]
-        ),
-        $list(
-            sales_dist_ui,
-            'div',
-            {
-                class: 'grid grid-rows-auto',
-                style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
-            },
-            (x: number) => x === -1
-                ? ['div',  { class: `${cell_flex} min-h-[3rem]` }, 'Sales Distribution']
-                : ['div', { class: `${cell_flex} min-h-[3rem]` }, `${x.toFixed(x < 1 ? 1 : 0)}%`]
-        ),
-        $list(
-            table_ui.map(Object.entries),
-            'div',
-            {
-                class: 'grid grid-rows-auto border-solid border-black border-2',
-                style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
-            },
-            TableCell(max_count.deref()!, MAX_PRICE_CAT)
+        div({ class: 'border-2 border-black border-solid rounded' }, 
+            $list(
+                column_headers,
+                'div',
+                {
+                    class: 'grid grid-rows-auto',
+                    style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
+                },
+                (num: number) => num === 0
+                    ? ['div', { class: `${cell_flex} min-h-[3rem] border-slate-300 border-b ${num === max_count.deref()! ? '' : 'border-r'}` }, 'Pack Size']
+                    : ['div', { class: `${cell_flex} min-h-[3rem] border-slate-300 border-b ${num === max_count.deref()! ? '' : 'border-r'}` }, num === max_count.deref() ? `${num}+` : num]
+            ),
+            $list(
+                sales_dist_ui.map(Object.entries),
+                'div',
+                {
+                    class: 'grid grid-rows-auto',
+                    style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
+                },
+                ([idx, x]) => x === -1
+                    ? ['div', { class: `${cell_flex} min-h-[3rem] border-y-black border-x-slate-300 border-b-2 ${parseInt(idx) === max_count.deref()! ? '' : 'border-r'}` }, 'Sales Distribution']
+                    : ['div', { class: `${cell_flex} min-h-[3rem] border-y-black border-x-slate-300 border-b-2 ${parseInt(idx) === max_count.deref()! ? '' : 'border-r'}` }, `${x.toFixed(x < 1 ? 1 : 0)}%`]
+            ),
+            $list(
+                table_ui.map(Object.entries),
+                'div',
+                {
+                    class: 'grid grid-rows-auto',
+                    style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
+                },
+                TableCell(max_count.deref()!, MAX_PRICE_CAT)
+            )   
         )
     )
 )).mount(document.body)
