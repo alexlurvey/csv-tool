@@ -44,7 +44,6 @@ const table_data_xform = (max: number) => multiplexObj<RowData, TableData>({
 
 const category = stream<string>();
 const max_count = reactive(8);
-const title = reactive('');
 const all_rows = reactive<RowData[]>([]);
 const categories = all_rows.map((rs) => new Set(rs.map((x) => x.category)));
 const table_rows = sync({ src: { all_rows, category }}).map(({ all_rows, category }) => {
@@ -127,9 +126,7 @@ const onFileUpload = (ev) => {
     reader.onload = (ev) => {
         const text = ev.target?.result;
         if (typeof text === 'string') {
-            const [t, ...rest] = text.split('\r\n');
-            title.next(t);
-            all_rows.next([...parseCSV(rest)]);
+            all_rows.next([...parseCSV(text.split('\r\n'))]);
         }
     }
     reader.readAsText(file)
@@ -149,7 +146,7 @@ $compile(div({},
             div({},  span({}, 'Max Pack Size: ')),
             div({}, span({}, $replace(table_max_count))),
             div({ class: 'mb-4' }, span({}, 'Max Price: ')),
-            div({}, $replace(table_max_price.map((x) => `$${x}`)))
+            div({}, $replace(table_max_price.map((x) => `€${x}`)))
         ),
         $list(
             column_headers,

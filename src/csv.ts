@@ -33,7 +33,7 @@ const countTx: CellTransform = (value: string) => {
 }
 
 const priceTx: CellTransform = (value: string) => {
-    const p = value.trim().split('\t').pop()!;
+    const p = value.trim().split(/[\t\s]/).pop()!;
     return parseFloat(p);
 }
 
@@ -48,6 +48,7 @@ export const parseCSV = (rows: any[]) => {
             'Category Name': { alias: 'category', tx: categoryTx() },
             'Package Configuration Value': { alias: 'count', tx: countTx },
             'Price (Euro)': { alias: 'price', tx: priceTx },
+            ' Price (Euro) ': { alias: 'price', tx: priceTx },
             'Unit Sales': { alias: 'unit_sales', tx: salesTx },
             'Value Sales': { alias: 'value_sales', tx: salesTx },
         }},
