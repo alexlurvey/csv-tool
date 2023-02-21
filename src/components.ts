@@ -57,6 +57,6 @@ export const TableCell = (maxcount: number, maxprice: number) => {
             isLastCol: (parseInt(idx) + 1) % (maxcount + 1) === 0
         }
 
-        return p === 0 ? NoData(opts) : Percent(p, opts)
+        return p === 0 || isNaN(p) ? NoData(opts) : Percent(p, opts)
     }
 }

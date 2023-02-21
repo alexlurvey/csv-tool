@@ -88,19 +88,11 @@ const cells = sync({ src: { table_data, max_count }}).map<Record<string, number[
     return percents;
 })
 
-const column_headers = table_data.map(({ columns }) => {
-    let prev = 0;
-    return [0, ...Object.keys(columns).flatMap((x) => {
-        const num = parseInt(x);
-        if (num - 1 !== prev) {
-            return [...range(prev + 1, num + 1)]
-        }
-        prev = num;
-        return num;
-    })]
+const column_headers = max_count.map((max) => {
+    return [...range(max + 1)]
 })
 
-const sales_dist_ui = table_data.map(({ totals }) => {
+const sales_dist_ui = sync({ src: { table_data, max_count} }).map(({ table_data: { totals }, max_count }) => {
     const all_sales = Object.values(totals).reduce((acc, x) => acc + x, 0);
     let prev = 0;
     const percents = Object.entries(totals).flatMap(([count, num]) => {
@@ -110,7 +102,9 @@ const sales_dist_ui = table_data.map(({ totals }) => {
         prev = c;
         return result;
     })
-    return [-1, ...percents];
+
+    const zeros = Array.from(range(max_count), () => 0);
+    return [-1, ...percents, ...zeros].slice(0, max_count + 1);
 })
 
 const table_ui = cells.map((rows) => {
@@ -148,7 +142,7 @@ $compile(div({},
             div({ class: 'mb-4' }, span({}, 'Max Price: ')),
             div({}, $replace(table_max_price.map((x) => `€${x}`)))
         ),
-        div({ class: 'border-2 border-black border-solid rounded' }, 
+        div({ class: 'border-2 border-black border-solid rounded' },
             $list(
                 column_headers,
                 'div',
@@ -179,7 +173,7 @@ $compile(div({},
                     style: { 'grid-template-columns': `2fr repeat(${max_count.deref()}, minmax(0, 1fr))` }
                 },
                 TableCell(max_count.deref()!, MAX_PRICE_CAT)
-            )   
+            )
         )
     )
 )).mount(document.body)
